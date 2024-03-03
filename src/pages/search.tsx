@@ -1,23 +1,100 @@
 import { useState } from "react"
 import ProductCard from "../Components/product-card";
 
+import { CustomError } from "../types/api-types";
+import toast from "react-hot-toast";
+import { useBrandQuery, useCategoriesQuery, useColorQuery, useSearchProductsQuery, useSizeQuery, useStyleQuery } from "../redux/api/productAPI";
+import { Skeleton } from "../Components/loader";
+import { CartItem } from "../types/types";
+import { addToCart } from "../redux/reducer/cartReducer";
+import { useDispatch } from "react-redux";
+
+
 
 const Search = () => {
+  const {
+    data: categoriesResponse,
+    isLoading: loadingCategories,
+    isError,
+    error,
+  } = useCategoriesQuery("");
+
+ const{data:sizeResponse,isLoading:loadingSize ,isError: sizeIsError,
+  error: sizeError,}= useSizeQuery("");
+
+ const{data:colorResponse,isLoading:loadingColor,isError: colorIsError,
+  error: colorError}= useColorQuery("");
+
+ const{data:brandResponse,isLoading:loadingBrand,isError: brandIsError,
+  error: brandError}= useBrandQuery("");
+
+ const{data:styleResponse,isLoading:loadingStyle,isError: styleIsError,
+  error: styleError}= useStyleQuery("");
 
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("");
-  const [maxPrice, setMaxPrice] = useState(100000);
+  const [maxPrice, setMaxPrice] = useState(5000);
   const [category, setCategory] = useState("");
   const [color, setColor] = useState("");
   const [brand, setBrand] = useState("");
   const [style, setStyle] = useState("");
+  const [size, setSize] = useState("");
   const [page, setPage] = useState(1);
 
-  const addToCartHandler = () => {}
+  
+  const {
+    isLoading: productLoading,
+    data: searchedData,
+    isError: productIsError,
+    error: productError,
+  } = useSearchProductsQuery({
+    search,
+    sort,
+    category,
+    page,
+    color,
+    brand,
+    style,
+    size,
+    price: maxPrice,
+  });
+
+  // console.log(searchedData);
+  const dispatch = useDispatch();
+  
+  const addToCartHandler = (cartItem: CartItem) => {
+    if (cartItem.stock < 1) return toast.error("Out of Stock");
+    dispatch(addToCart(cartItem));
+    toast.success("Added to cart");
+  };
 
   const isPrevPage = page > 1;
   const isNextPage = page < 4;
   
+  if (isError) {
+    const err = error as CustomError;
+    toast.error(err.data.message);
+  }
+  if (sizeIsError) {
+    const err = sizeError as CustomError;
+    toast.error(err.data.message);
+  }
+  if (colorIsError) {
+    const err = colorError as CustomError;
+    toast.error(err.data.message);
+  }
+  if (brandIsError) {
+    const err = brandError as CustomError;
+    toast.error(err.data.message);
+  }
+  if (styleIsError) {
+    const err = brandError as CustomError;
+    toast.error(err.data.message);
+  }
+  if (productIsError) {
+    const err = styleError as CustomError;
+    toast.error(err.data.message);
+  }
 
   return (
     <div className="product-search-page">
@@ -37,7 +114,7 @@ const Search = () => {
             <input
              type = "range"
               min={100} 
-              max={100000} 
+              max={5000} 
               value={maxPrice}
                onChange={(e)=>setMaxPrice(Number(e.target.value))}/>
           </div>
@@ -46,31 +123,38 @@ const Search = () => {
             <h4>Category</h4>
             <select value={category} onChange={(e)=>setCategory(e.target.value)}>
               <option value="">All</option>
-              <option value="">Sample 1</option>
-              <option value="">Sample 2</option>
+              {!loadingCategories &&
+              categoriesResponse?.categories.map((i) => (
+                <option key={i} value={i}>
+                  {i.toUpperCase()}
+                </option>
+              ))}
             </select>
           </div>
 
           <div>
             <h4>Size</h4>
-            
-              <button>28</button>
-              <button>30</button>
-              <button>32</button>
-              <button>34</button>
-              <button>36</button>
-
+            <select value={size} onChange={(e)=>setSize(e.target.value)}>
+              <option value="">All</option>
+              {!loadingSize &&
+              sizeResponse?.size.map((i) => (
+                <option key={i} value={i}>
+                  {i.toUpperCase()}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
             <h4>Colors</h4>
             <select value={color} onChange={(e)=>setColor(e.target.value)}>
               <option value="">All</option>
-              <option value="">Red </option>
-              <option value="">Green</option>
-              <option value="">Blue</option>
-              <option value="">Voilet</option>
-              <option value="">Pink</option>
+              {!loadingColor &&
+              colorResponse?.color.map((i) => (
+                <option key={i} value={i}>
+                  {i.toUpperCase()}
+                </option>
+              ))}
 
             </select>
           </div>
@@ -79,9 +163,12 @@ const Search = () => {
             <h4>Brand</h4>
             <select value={brand} onChange={(e)=>setBrand(e.target.value)}>
               <option value="">All</option>
-              <option value="">Adibas </option>
-              <option value="">puna </option>
-              <option value="">nyka </option>
+              {!loadingBrand &&
+              brandResponse?.brand.map((i) => (
+                <option key={i} value={i}>
+                  {i.toUpperCase()}
+                </option>
+              ))}
 
             </select>
           </div>
@@ -90,8 +177,12 @@ const Search = () => {
             <h4>Style</h4>
             <select value={style} onChange={(e)=>setStyle(e.target.value)}>
               <option value="">All</option>
-              <option value="">style 1</option>
-              <option value="">style 2</option>
+              {!loadingStyle &&
+              styleResponse?.style.map((i) => (
+                <option key={i} value={i}>
+                  {i.toUpperCase()}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -103,37 +194,50 @@ const Search = () => {
         <main>
           <h1>Products</h1>
           <input type="text" placeholder="Search by name..." value={search} onChange={e=>setSearch(e.target.value)}/>
-
+          {productLoading ? (
+          <Skeleton length={10} />
+        ) : (
           <div className="search-product-list">
-            <ProductCard
-            productId="ashlesh"
-            name="shirt"
-            price={421}
-            stock={3213}
-            handler={addToCartHandler}
-            photo="https://m.media-amazon.com/images/I/71xZY5-a1oL._SY879_.jpg"/>
-
-            <ProductCard
-            productId="ashlesh"
-            name="Tshirt"
-            price={241}
-            stock={3213}
-            handler={addToCartHandler}
-            photo="https://m.media-amazon.com/images/I/51byp5tQ86L._SX679_.jpg"/>
-
-
+            {searchedData?.products.map((i) => (
+              <ProductCard
+              key={i._id}
+              productId={i._id}
+              name={i.name}
+              price={i.price}
+              stock={i.stock}
+              brand={i.brand}
+              color={i.color}
+              size={i.size}
+              style={i.style}
+              handler = {addToCartHandler}
+              photo={i.photo}
+              />
+            ))}
           </div>
+        )}
 
+
+         
+
+{searchedData && searchedData.totalPage > 1 && (
           <article>
-            <button disabled={!isPrevPage} onClick={()=>setPage((prev)=>prev-1)}>Prev</button>
+            <button
+              disabled={!isPrevPage}
+              onClick={() => setPage((prev) => prev - 1)}
+            >
+              Prev
+            </button>
             <span>
-              {page} of {4}
+              {page} of {searchedData.totalPage}
             </span>
-            <button disabled={!isNextPage} onClick={()=>setPage((prev)=>prev+1)}>Next</button>
-
-
+            <button
+              disabled={!isNextPage}
+              onClick={() => setPage((prev) => prev + 1)}
+            >
+              Next
+            </button>
           </article>
-
+)}
         </main>
 
 

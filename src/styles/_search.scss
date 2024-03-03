@@ -51,7 +51,7 @@
             @include flex(row, flex-start, flex-start);
             flex-wrap : wrap;
             height: calc(100% - 10rem);
-            overflow-y: auto;
+            // overflow-y: auto;
         }
 
         article{
@@ -60,6 +60,7 @@
                 @include flex;
                 @include btn(0.5rem 1rem, $color3, $color1);
                 border-radius: 10px;
+                margin: 30px;
                 &:disabled{
                     cursor : not-allowed;
                     opacity: 0.5;

@@ -1,8 +1,27 @@
 import {Link} from 'react-router-dom'
 import ProductCard from '../Components/product-card';
+import { useLatestProductsQuery } from '../redux/api/productAPI';
+import toast from 'react-hot-toast';
+import Loader, { Skeleton } from '../Components/loader';
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../redux/reducer/cartReducer';
+import { CartItem } from '../types/types';
 
 const Home = () => {
-  const addToCartHandler = () => {};
+
+  const {data ,isLoading,isError} =useLatestProductsQuery("")
+
+  const dispatch = useDispatch();
+
+  const addToCartHandler = (cartItem: CartItem) => {
+    if (cartItem.stock < 1) return toast.error("Out of Stock");
+    dispatch(addToCart(cartItem));
+    toast.success("Added to cart");
+  };
+
+ 
+  if(isError) toast.error("Cannot Fetch the Product")
+
  return ( 
  <div className="home">
     <section></section>
@@ -16,38 +35,26 @@ const Home = () => {
     </h1>
 
     <main>
-    <ProductCard
-      productId="ashlesh"
-      name="shirt"
-      price={421}
-      stock={3213}
-      handler={addToCartHandler}
-      photo="https://m.media-amazon.com/images/I/71xZY5-a1oL._SY879_.jpg"/>
+    {
+      isLoading ?( <Skeleton width="80vw" />):(data?.products.map((i)=>(
+        <ProductCard 
+        key={i._id}
+        productId={i._id}
+        name={i.name}
+        price={i.price}
+        stock={i.stock}
+        brand={i.brand}
+        color={i.color}
+        size={i.size}
+        style={i.style}
+        handler = {addToCartHandler}
+        photo={i.photo}
+        
+        
+        />
 
-
-<ProductCard
-      productId="ashlesh"
-      name="shirt"
-      price={421}
-      stock={3213}
-      handler={addToCartHandler}
-      photo="https://m.media-amazon.com/images/I/71xZY5-a1oL._SY879_.jpg"/>
-
-<ProductCard
-      productId="ashlesh"
-      name="shirt"
-      price={421}
-      stock={3213}
-      handler={addToCartHandler}
-      photo="https://m.media-amazon.com/images/I/71xZY5-a1oL._SY879_.jpg"/>
-
-<ProductCard
-      productId="ashlesh"
-      name="shirt"
-      price={421}
-      stock={3213}
-      handler={addToCartHandler}
-      photo="https://m.media-amazon.com/images/I/71xZY5-a1oL._SY879_.jpg"/>
+      ))
+    )}
 
       
     </main>
